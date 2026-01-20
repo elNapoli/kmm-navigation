@@ -12,7 +12,7 @@ class NavigationFeature : Feature {
 
     override val featureName: String = "navigation"
 
-    override val priority: Int = 1
+    override val priority: Int = 10
 
     override fun provideDependencies(): List<Module> = listOf(
         navigationModule
