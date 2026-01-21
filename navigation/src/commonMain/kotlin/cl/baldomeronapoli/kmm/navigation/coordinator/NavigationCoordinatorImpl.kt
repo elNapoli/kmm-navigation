@@ -63,9 +63,8 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
 
     override fun registerHandler(handler: NavigationHandler) {
         if (handlers.containsKey(handler.featureName)) {
-            throw IllegalStateException(
-                "NavigationHandler for feature '${handler.featureName}' already registered"
-            )
+            Napier.d("NavigationCoordinator: Handler for '${handler.featureName}' already registered, skipping")
+            return
         }
         handlers[handler.featureName] = handler
         Napier.d("NavigationCoordinator: Registered handler for feature '${handler.featureName}'")
