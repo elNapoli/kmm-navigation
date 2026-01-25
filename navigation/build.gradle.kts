@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
     id("maven-publish")
 }
 
@@ -44,6 +45,7 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.jetbrains.navigation.compose)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.serialization.json)
 
             // Napoli Base
             implementation(libs.napoli.kmm.base)

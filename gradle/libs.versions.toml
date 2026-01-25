@@ -6,6 +6,7 @@ android-targetSdk = "36"
 composeMultiplatform = "1.10.0"
 kotlin = "2.3.0"
 kotlinx-datetime = "0.6.1"
+kotlinx-serialization = "1.8.0"
 navigationCompose = "2.9.1"
 koin = "4.1.1"
 napoli-base = "1.0.0"
@@ -14,6 +15,7 @@ napoli-base = "1.0.0"
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 jetbrains-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 napoli-kmm-base = { module = "cl.baldomeronapoli.kmm:base", version.ref = "napoli-base" }
 
@@ -22,3 +24,4 @@ androidLibrary = { id = "com.android.library", version.ref = "agp" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
