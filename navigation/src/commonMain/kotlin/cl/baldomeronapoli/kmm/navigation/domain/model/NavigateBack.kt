@@ -1,4 +1,4 @@
-package cl.baldomeronapoli.kmm.navigation.commands
+package cl.baldomeronapoli.kmm.navigation.domain.model
 
 import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
 

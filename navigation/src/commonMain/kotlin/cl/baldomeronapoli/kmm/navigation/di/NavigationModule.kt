@@ -1,7 +1,7 @@
 package cl.baldomeronapoli.kmm.navigation.di
 
 import cl.baldomeronapoli.kmm.base.navigation.NavigationCoordinator
-import cl.baldomeronapoli.kmm.navigation.coordinator.NavigationCoordinatorImpl
+import cl.baldomeronapoli.kmm.navigation.data.repository.NavigationCoordinatorImpl
 import org.koin.dsl.module
 
 

@@ -1,11 +1,11 @@
-package cl.baldomeronapoli.kmm.navigation.handlers
+package cl.baldomeronapoli.kmm.navigation.data.datasource
 
 import androidx.navigation.NavHostController
 import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
 import cl.baldomeronapoli.kmm.base.navigation.NavigationHandler
-import cl.baldomeronapoli.kmm.navigation.commands.NavigateBack
-import cl.baldomeronapoli.kmm.navigation.commands.NavigateBackTo
-import cl.baldomeronapoli.kmm.navigation.commands.NavigateToRoute
+import cl.baldomeronapoli.kmm.navigation.domain.model.NavigateBack
+import cl.baldomeronapoli.kmm.navigation.domain.model.NavigateBackTo
+import cl.baldomeronapoli.kmm.navigation.domain.model.NavigateToRoute
 
 /**
  * Handler genérico que maneja comandos comunes de navegación.
