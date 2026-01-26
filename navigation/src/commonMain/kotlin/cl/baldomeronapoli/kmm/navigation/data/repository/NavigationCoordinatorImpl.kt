@@ -50,8 +50,7 @@ import io.github.aakira.napier.Napier
 class NavigationCoordinatorImpl : NavigationCoordinator {
 
     private val handlers = mutableMapOf<String, NavigationHandler>()
-    var navController: NavHostController? = null
-        private set
+    private var navController: NavHostController? = null
 
 
     init {
