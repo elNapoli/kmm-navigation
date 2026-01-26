@@ -4,8 +4,8 @@ import androidx.navigation.NavHostController
 import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
 import cl.baldomeronapoli.kmm.base.navigation.NavigationCoordinator
 import cl.baldomeronapoli.kmm.base.navigation.NavigationHandler
-import cl.baldomeronapoli.kmm.navigation.domain.model.NavigationContract
 import cl.baldomeronapoli.kmm.navigation.data.datasource.CommonNavigationHandler
+import cl.baldomeronapoli.kmm.navigation.domain.model.NavigationContract
 import io.github.aakira.napier.Napier
 
 /**
@@ -50,7 +50,9 @@ import io.github.aakira.napier.Napier
 class NavigationCoordinatorImpl : NavigationCoordinator {
 
     private val handlers = mutableMapOf<String, NavigationHandler>()
-    private var navController: NavHostController? = null
+    var navController: NavHostController? = null
+        private set
+
 
     init {
         registerHandler(CommonNavigationHandler())
