@@ -1,5 +1,6 @@
 package cl.baldomeronapoli.kmm.navigation.domain.model
 
+import cl.baldomeronapoli.kmm.base.domain.models.Destination
 import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
 
 /**
@@ -9,6 +10,6 @@ import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
  * @param inclusive Si true, también elimina la ruta de destino del stack.
  */
 data class NavigateBackTo(
-    val route: String? = null,
+    val route: Destination? = null,
     val inclusive: Boolean = false
 ) : NavigationCommand
