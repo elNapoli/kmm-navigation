@@ -1,7 +1,7 @@
-package cl.baldomeronapoli.kmm.navigation.domain.model
+package cl.baldomeronapoli.navigation.domain.model
 
-import cl.baldomeronapoli.kmm.base.domain.models.Destination
-import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
+import cl.baldomeronapoli.base.domain.models.Destination
+import cl.baldomeronapoli.base.navigation.NavigationCommand
 
 /**
  * Comando para navegar a una ruta específica sin tipo (fallback).

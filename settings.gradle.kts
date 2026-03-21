@@ -1,4 +1,4 @@
-rootProject.name = "NapoliKmmNavigation"
+rootProject.name = "NapoliNavigationKmp"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
@@ -30,4 +30,4 @@ dependencyResolutionManagement {
     }
 }
 
-include(":navigation")
+include(":navigation-kmp")

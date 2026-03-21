@@ -1,6 +1,6 @@
-package cl.baldomeronapoli.kmm.navigation.domain.model
+package cl.baldomeronapoli.navigation.domain.model
 
-import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
+import cl.baldomeronapoli.base.navigation.NavigationCommand
 
 /**
  * Contrato de navegación que cada feature debe definir en el módulo base.

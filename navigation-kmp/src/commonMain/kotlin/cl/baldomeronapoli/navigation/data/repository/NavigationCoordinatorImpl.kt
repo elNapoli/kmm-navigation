@@ -1,12 +1,12 @@
-package cl.baldomeronapoli.kmm.navigation.data.repository
+package cl.baldomeronapoli.navigation.data.repository
 
 import androidx.navigation.NavHostController
-import cl.baldomeronapoli.kmm.base.navigation.NavigationCommand
-import cl.baldomeronapoli.kmm.base.navigation.NavigationCoordinator
-import cl.baldomeronapoli.kmm.base.navigation.NavigationHandler
-import cl.baldomeronapoli.kmm.navigation.data.datasource.CommonNavigationHandler
-import cl.baldomeronapoli.kmm.navigation.domain.model.NavigationContract
-import io.github.aakira.napier.Napier
+import cl.baldomeronapoli.base.navigation.NavigationCommand
+import cl.baldomeronapoli.base.navigation.NavigationCoordinator
+import cl.baldomeronapoli.base.navigation.NavigationHandler
+import cl.baldomeronapoli.navigation.data.datasource.CommonNavigationHandler
+import cl.baldomeronapoli.navigation.domain.model.NavigationContract
+import cl.baldomeronapoli.logger.Trace
 
 /**
  * Coordinador central de navegación.
@@ -59,16 +59,16 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
 
     override fun setNavController(navController: NavHostController) {
         this.navController = navController
-        Napier.d("NavigationCoordinator: NavController set")
+        Trace.d("NavigationCoordinator: NavController set")
     }
 
     override fun registerHandler(handler: NavigationHandler) {
         if (handlers.containsKey(handler.featureName)) {
-            Napier.d("NavigationCoordinator: Handler for '${handler.featureName}' already registered, skipping")
+            Trace.d("NavigationCoordinator: Handler for '${handler.featureName}' already registered, skipping")
             return
         }
         handlers[handler.featureName] = handler
-        Napier.d("NavigationCoordinator: Registered handler for feature '${handler.featureName}'")
+        Trace.d("NavigationCoordinator: Registered handler for feature '${handler.featureName}'")
     }
 
     override fun registerHandlers(vararg handlers: NavigationHandler) {
@@ -78,7 +78,7 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
     override fun navigate(command: NavigationCommand): Boolean {
         val currentNavController = navController
         if (currentNavController == null) {
-            Napier.e("NavigationCoordinator: Cannot navigate, NavController not set")
+            Trace.e("NavigationCoordinator: Cannot navigate, NavController not set")
             return false
         }
 
@@ -88,30 +88,30 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
             if (handler != null) {
                 val handled = handler.handle(command, currentNavController)
                 if (handled) {
-                    Napier.d("NavigationCoordinator: Command $command handled by ${handler.featureName}")
+                    Trace.d("NavigationCoordinator: Command $command handled by ${handler.featureName}")
                     return true
                 }
             } else {
-                Napier.w("NavigationCoordinator: No handler found for feature '${command.featureName}'")
+                Trace.w("NavigationCoordinator: No handler found for feature '${command.featureName}'")
             }
         }
 
         // Intentar con el handler común
         val commonHandler = handlers["common"]
         if (commonHandler != null && commonHandler.handle(command, currentNavController)) {
-            Napier.d("NavigationCoordinator: Command $command handled by common handler")
+            Trace.d("NavigationCoordinator: Command $command handled by common handler")
             return true
         }
 
         // Intentar con todos los handlers (fallback)
         for (handler in handlers.values) {
             if (handler.handle(command, currentNavController)) {
-                Napier.d("NavigationCoordinator: Command $command handled by ${handler.featureName} (fallback)")
+                Trace.d("NavigationCoordinator: Command $command handled by ${handler.featureName} (fallback)")
                 return true
             }
         }
 
-        Napier.w("NavigationCoordinator: No handler found for command: $command")
+        Trace.w("NavigationCoordinator: No handler found for command: $command")
         return false
     }
 
@@ -127,6 +127,6 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
         handlers.clear()
         registerHandler(CommonNavigationHandler())
         navController = null
-        Napier.d("NavigationCoordinator: Cleared all handlers")
+        Trace.d("NavigationCoordinator: Cleared all handlers")
     }
 }

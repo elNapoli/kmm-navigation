@@ -48,7 +48,9 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
 
             // Napoli Base
-            implementation(libs.napoli.kmm.base)
+            implementation(libs.napoli.base)
+            implementation(libs.napoli.logger)
+            
 
         }
         commonTest.dependencies {
@@ -58,7 +60,7 @@ kotlin {
 }
 
 android {
-    namespace = "cl.baldomeronapoli.kmm.navigation"
+    namespace = "cl.baldomeronapoli.navigation"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
@@ -125,7 +127,7 @@ publishing {
 afterEvaluate {
     publishing {
         publications.withType<MavenPublication> {
-            groupId = "cl.baldomeronapoli.kmm"
+            groupId = "cl.baldomeronapoli"
             version = versionProvider.get()
         }
     }

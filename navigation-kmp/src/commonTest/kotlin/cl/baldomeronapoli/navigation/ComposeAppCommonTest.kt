@@ -1,4 +1,4 @@
-package cl.baldomeronapoli.kmm.navigation
+package cl.baldomeronapoli.navigation
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
