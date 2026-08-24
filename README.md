@@ -1,319 +1,283 @@
 # Napoli KMM Navigation
 
-Librería de navegación type-safe para Kotlin Multiplatform (Android e iOS) usando Compose
-Multiplatform y Navigation 2.9+.
+Librería de navegación desacoplada entre features para Kotlin Multiplatform (Android e iOS),
+construida sobre Navigation Compose Multiplatform y el sistema de features de
+[`napoli-kmm-base`](https://github.com/elNapoli/kmm-base).
 
-## 🚀 Características
+## Características
 
-- ✅ **Type-safe**: Uso de `@Serializable` data classes para rutas
-- ✅ **Multiplataforma**: Funciona nativamente en Android e iOS
-- ✅ **Moderno**: Usa `toRoute<T>()` API (Navigation 2.9+)
-- ✅ **Simple**: Menos boilerplate que el enfoque tradicional
-- ✅ **Seguro**: Errores de compilación en lugar de errores en runtime
+- **Navegación desacoplada entre features**: un feature navega a otro sin conocer su implementación
+- **Coordinador central**: `NavigationCoordinator` enruta comandos al handler correcto
+- **Comandos tipados**: cada feature define su propio `NavigationContract` con sus comandos posibles
+- **Comandos comunes incluidos**: `NavigateBack`, `NavigateBackTo`, `NavigateToRoute` ya vienen resueltos
+- **Integración con Koin**: se registra con un módulo (`NavigationModule`) listo para usar
+- **Multiplataforma**: Android e iOS (`iosArm64`, `iosSimulatorArm64`)
 
-## 📦 Instalación
+## Instalación
+
+Publicada en GitHub Packages (repo privado). Requiere PAT con scope `read:packages` — ver
+[Instalación en el README de napoli-kmm-base](https://github.com/elNapoli/kmm-base#instalación)
+para el detalle de cómo generar el token y configurar `local.properties`.
+
+En `settings.gradle.kts`:
 
 ```kotlin
-// En tu build.gradle.kts
-commonMain.dependencies {
-    implementation("cl.baldomeronapoli.kmm:navigation:VERSION")
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/elNapoli/kmm-navigation")
+            credentials {
+                val localProperties = java.util.Properties().apply {
+                    val file = File(rootDir, "local.properties")
+                    if (file.exists()) load(file.inputStream())
+                }
+                username = localProperties.getProperty("gpr.user")
+                    ?: System.getenv("GITHUB_ACTOR")
+                password = localProperties.getProperty("gpr.token")
+                    ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
 ```
 
-## 🎯 Uso Básico
+En `libs.versions.toml`:
 
-### 1. Definir Rutas con @Serializable
+```toml
+[versions]
+napoli-navigation = "1.0.0"
+
+[libraries]
+napoli-kmm-navigation = { module = "cl.baldomeronapoli:navigation-kmp", version.ref = "napoli-navigation" }
+```
+
+En el `build.gradle.kts` de tu módulo:
 
 ```kotlin
-import kotlinx.serialization.Serializable
-
-sealed class AppDestinations {
-    // Ruta sin argumentos
-    @Serializable
-    data object Home
-
-    // Ruta con un argumento
-    @Serializable
-    data class Profile(val userId: String)
-
-    // Ruta con múltiples argumentos de diferentes tipos
-    @Serializable
-    data class PostDetail(
-        val postId: String,
-        val commentId: Int,
-        val isHighlighted: Boolean = false
-    )
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation(libs.napoli.kmm.navigation)
+        }
+    }
 }
 ```
 
-### 2. Navegar a un Destino
+> Esta librería depende de `cl.baldomeronapoli:base-kmp` y `cl.baldomeronapoli:logger-kmp` —
+> asegúrate de tener también sus repos de GitHub Packages configurados
+> (ver [Instalación en base-kmp](https://github.com/elNapoli/kmm-base#instalación)).
 
-```kotlin
-// Navegar a Home
-navController.navigate(AppDestinations.Home)
+## Arquitectura
 
-// Navegar a Profile con argumentos
-navController.navigate(AppDestinations.Profile(userId = "user123"))
+Cada feature define sus propios comandos de navegación (`NavigationContract`) y su propio
+handler (`NavigationHandler`). El `NavigationCoordinator` central recibe cualquier comando y lo
+enruta al handler del feature correspondiente — así un feature puede pedirle a otro que navegue
+sin importar su implementación (pantallas, rutas internas, etc).
 
-// Navegar a PostDetail con múltiples argumentos
-navController.navigate(
-    AppDestinations.PostDetail(
-        postId = "post456",
-        commentId = 789,
-        isHighlighted = true
-    )
-)
+```
+ViewModel (Feature A)
+   |
+   | navigationCoordinator.navigate(HomeContract.NavigateToHome)
+   v
+NavigationCoordinator
+   |
+   | busca el handler registrado para featureName = "home"
+   v
+HomeNavigationHandler
+   |
+   | navController.navigate(...)
+   v
+NavController ejecuta la navegación
 ```
 
-### 3. Definir Composables y Extraer Argumentos
+### Piezas clave (viven en `cl.baldomeronapoli.base.navigation`, dentro de `base-kmp`)
+
+- **`NavigationCommand`**: interface marcadora, cualquier comando de navegación la implementa
+- **`NavigationHandler`**: contrato que cada feature implementa para procesar sus comandos
+  ```kotlin
+  interface NavigationHandler {
+      val featureName: String
+      fun handle(command: NavigationCommand, navController: NavHostController): Boolean
+  }
+  ```
+- **`NavigationCoordinator`**: coordina el envío de comandos al handler correcto
+  ```kotlin
+  interface NavigationCoordinator {
+      fun setNavController(navController: NavHostController)
+      fun registerHandler(handler: NavigationHandler)
+      fun registerHandlers(vararg handlers: NavigationHandler)
+      fun navigate(command: NavigationCommand): Boolean
+      fun getHandler(featureName: String): NavigationHandler?
+      fun hasHandler(featureName: String): Boolean
+      fun clear()
+  }
+  ```
+
+### Piezas que aporta esta librería (`cl.baldomeronapoli.navigation`)
+
+- **`NavigationCoordinatorImpl`**: implementación de `NavigationCoordinator`. Registra
+  automáticamente un `CommonNavigationHandler` al crearse.
+- **`CommonNavigationHandler`**: handler incluido por defecto (`featureName = "common"`) que
+  resuelve los comandos genéricos sin que cada feature tenga que reimplementarlos:
+  - `NavigateBack`: navega hacia atrás (`navController.navigateUp()`)
+  - `NavigateBackTo(route, inclusive)`: hace pop hasta una ruta específica (o hasta el root si `route == null`)
+  - `NavigateToRoute(route, popUpTo, inclusive, singleTop)`: navega a una `Destination` directamente
+- **`NavigationContract`** / **`TypedNavigationContract<T>`**: contratos base para que cada
+  feature defina sus propios comandos tipados
+- **`NavigationModule`**: módulo de Koin que registra `NavigationCoordinator` como singleton
+
+### `Destination` (de `base-kmp`)
+
+Marker interface (`cl.baldomeronapoli.base.domain.models.Destination`) que deben implementar tus
+rutas `@Serializable` para poder usarse con `NavigateToRoute` y con `composable<T>()` /
+`navigation<T>()` de Navigation Compose:
 
 ```kotlin
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
+@Serializable
+sealed class SettingsDestination : Destination {
+    @Serializable
+    data object Graph : SettingsDestination()
 
+    @Serializable
+    data object Main : SettingsDestination()
+}
+```
+
+## Uso
+
+### 1. Definir el contrato de navegación del feature
+
+Cada feature declara qué comandos de navegación expone hacia el resto de la app:
+
+```kotlin
+sealed interface HomeContract : NavigationCommand {
+    data object NavigateToHome : HomeContract
+    data class NavigateToProfile(val userId: String) : HomeContract
+}
+```
+
+### 2. Implementar el `NavigationHandler` del feature
+
+```kotlin
+class HomeNavigationHandler : NavigationHandler {
+    override val featureName = "home"
+
+    override fun handle(
+        command: NavigationCommand,
+        navController: NavHostController
+    ): Boolean = when (command) {
+        is HomeContract.NavigateToHome -> {
+            navController.navigate(HomeDestination.Main)
+            true
+        }
+        is HomeContract.NavigateToProfile -> {
+            navController.navigate(HomeDestination.Profile(command.userId))
+            true
+        }
+        else -> false
+    }
+}
+```
+
+### 3. Implementar `NavigableFeature` (de `base-kmp`)
+
+```kotlin
+class HomeFeature : NavigableFeature, KoinComponent {
+    override val featureName = "home"
+    override val priority = 100
+
+    override var navigationCoordinator: NavigationCoordinator? = null
+        get() = field ?: inject<NavigationCoordinator>().value.also { field = it }
+
+    override fun provideDependencies(): List<Module> = HomeModule.getModules()
+
+    override fun NavGraphBuilder.registerNavigation() {
+        navigation<HomeDestination.Graph>(startDestination = HomeDestination.Main::class) {
+            composable<HomeDestination.Main> {
+                LazyFeatureLoader(featureName = featureName) { MainRoute() }
+            }
+        }
+    }
+
+    override fun onNavigationReady(navController: NavHostController) {}
+    override fun dispose() { navigationCoordinator = null }
+}
+```
+
+### 4. Registrar Koin y los handlers en el punto de entrada de la app
+
+```kotlin
+startKoin {
+    modules(AppModule.getModules())
+    modules(NavigationModule.getModules())       // registra NavigationCoordinator
+    modules(featureManager.getCriticalDependencyModules(maxPriority = 50))
+}
+```
+
+```kotlin
 @Composable
-fun AppNavigation() {
+fun AppRoute() {
     val navController = rememberNavController()
+    val navigationCoordinator: NavigationCoordinator = koinInject()
+    val featureManager: FeatureManager = koinInject()
 
-    NavHost(
-        navController = navController,
-        startDestination = AppDestinations.Home
-    ) {
-        // Ruta sin argumentos
-        composable<AppDestinations.Home> {
-            HomeScreen(
-                onNavigateToProfile = { userId ->
-                    navController.navigate(AppDestinations.Profile(userId))
-                }
-            )
-        }
-
-        // Ruta con argumentos - usar toRoute() para extraer
-        composable<AppDestinations.Profile> { backStackEntry ->
-            val args = backStackEntry.toRoute<AppDestinations.Profile>()
-            ProfileScreen(
-                userId = args.userId,
-                onNavigateBack = { navController.navigateUp() }
-            )
-        }
-
-        composable<AppDestinations.PostDetail> { backStackEntry ->
-            val args = backStackEntry.toRoute<AppDestinations.PostDetail>()
-            PostDetailScreen(
-                postId = args.postId,
-                commentId = args.commentId,
-                isHighlighted = args.isHighlighted,
-                onNavigateBack = { navController.navigateUp() }
-            )
-        }
-    }
-}
-```
-
-## 🔥 Ejemplos Avanzados
-
-### Nested Navigation (Graphs anidados)
-
-```kotlin
-@Serializable
-sealed class AuthDestinations {
-    @Serializable
-    data object Login
-
-    @Serializable
-    data class Otp(val phone: String)
-}
-
-@Serializable
-sealed class MainDestinations {
-    @Serializable
-    data object Home
-
-    @Serializable
-    data object Settings
-}
-
-NavHost(navController, startDestination = AuthDestinations.Login) {
-    // Auth flow
-    navigation<AuthDestinations.Login>(
-        startDestination = AuthDestinations.Login
-    ) {
-        composable<AuthDestinations.Login> {
-            LoginScreen(
-                onNavigateToOtp = { phone ->
-                    navController.navigate(AuthDestinations.Otp(phone))
-                }
-            )
-        }
-
-        composable<AuthDestinations.Otp> { backStackEntry ->
-            val args = backStackEntry.toRoute<AuthDestinations.Otp>()
-            OtpScreen(phone = args.phone)
-        }
+    LaunchedEffect(navController) {
+        navigationCoordinator.setNavController(navController)
+        navigationCoordinator.registerHandlers(
+            HomeNavigationHandler(),
+            SettingsNavigationHandler(),
+            // ... un handler por feature que necesite manejar comandos propios
+        )
     }
 
-    // Main flow
-    navigation<MainDestinations.Home>(
-        startDestination = MainDestinations.Home
-    ) {
-        composable<MainDestinations.Home> {
-            HomeScreen()
-        }
-
-        composable<MainDestinations.Settings> {
-            SettingsScreen()
-        }
+    LaunchedEffect(navController) {
+        featureManager.notifyNavigationReady(navController)
     }
+
+    MainRoute(navController = navController)
 }
 ```
 
-### Valores por Defecto
+### 5. Navegar desde cualquier feature
 
 ```kotlin
-@Serializable
-data class Filter(
-    val category: String = "all",
-    val sortBy: String = "date",
-    val ascending: Boolean = true
-)
+// Navegar con un comando propio del feature
+navigationCoordinator.navigate(HomeContract.NavigateToProfile(userId = "123"))
 
-// Navegar con valores por defecto
-navController.navigate(Filter()) // Usa todos los defaults
+// Navegar a una ruta directa sin contrato
+navigationCoordinator.navigate(NavigateToRoute(HomeDestination.Main))
 
-// Navegar con algunos valores personalizados
-navController.navigate(Filter(category = "tech"))
+// Volver atrás
+navigationCoordinator.navigate(NavigateBack)
 
-// En el composable
-composable<Filter> { backStackEntry ->
-    val args = backStackEntry.toRoute<Filter>()
-    FilterScreen(
-        category = args.category,      // "tech" o "all" (default)
-        sortBy = args.sortBy,           // "date" (default)
-        ascending = args.ascending      // true (default)
-    )
-}
+// Volver hasta una ruta específica
+navigationCoordinator.navigate(NavigateBackTo(route = HomeDestination.Main, inclusive = false))
 ```
 
-### Tipos Complejos
+Si el comando implementa `NavigationContract` (tiene `featureName`), el coordinador lo despacha
+directo al handler de ese feature. Si no lo implementa (como `NavigateBack`/`NavigateToRoute`),
+prueba primero con el handler `"common"` y, si ninguno lo maneja, recorre el resto de handlers
+registrados como fallback.
 
-```kotlin
-import kotlinx.serialization.Serializable
+## Troubleshooting
 
-@Serializable
-data class SearchQuery(
-    val query: String,
-    val filters: List<String> = emptyList(),
-    val page: Int = 1,
-    val pageSize: Int = 20
-)
+**"No handler found for feature 'x'"** (log de warning): no se registró un `NavigationHandler`
+para ese `featureName` en `navigationCoordinator.registerHandlers(...)`, o el feature todavía no
+implementó lógica real en su handler (comúnmente queda con `else -> false` mientras se desarrolla).
 
-// Navegar
-navController.navigate(
-    SearchQuery(
-        query = "kotlin",
-        filters = listOf("tutorial", "advanced"),
-        page = 2
-    )
-)
-```
+**"Cannot navigate, NavController not set"**: se llamó a `navigate()` antes de que
+`navigationCoordinator.setNavController(navController)` corriera. Asegúrate de que el
+`LaunchedEffect` que setea el NavController corra antes de disparar navegación (incluyendo deep
+links en el cold start).
 
-## 🎨 Integración con ViewModel
-
-```kotlin
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.SavedStateHandle
-import androidx.navigation.toRoute
-
-class ProfileViewModel(
-    savedStateHandle: SavedStateHandle
-) : ViewModel() {
-    // Extraer argumentos directamente desde SavedStateHandle
-    private val args: AppDestinations.Profile = savedStateHandle.toRoute()
-
-    val userId: String = args.userId
-
-    // ... resto del ViewModel
-}
-```
-
-## 📚 Migración desde el Enfoque Antiguo
-
-### Antes (String-based con placeholders)
-
-```kotlin
-// ANTES ❌
-sealed class MessagingDestinations {
-    data object Conversation : Destination("conversation/{chatId}") {
-        fun createRoute(chatId: String) = "conversation/$chatId"
-
-        fun getChatId(backStackEntry: NavBackStackEntry): String {
-            return getArgString(backStackEntry, "chatId") ?: ""
-        }
-    }
-}
-
-// Navegar
-navController.navigate(
-    MessagingDestinations.Conversation.createRoute(chatId = "abc123")
-)
-
-// Definir composable
-destinationComposable(MessagingDestinations.Conversation) { backStackEntry ->
-    val chatId = MessagingDestinations.Conversation.getChatId(backStackEntry)
-    ConversationScreen(chatId = chatId)
-}
-```
-
-### Ahora (Type-safe con @Serializable)
-
-```kotlin
-// AHORA ✅
-@Serializable
-data class Conversation(val chatId: String)
-
-// Navegar (mucho más simple)
-navController.navigate(Conversation(chatId = "abc123"))
-
-// Definir composable (type-safe)
-composable<Conversation> { backStackEntry ->
-    val args = backStackEntry.toRoute<Conversation>()
-    ConversationScreen(chatId = args.chatId)
-}
-```
-
-## 🔧 Troubleshooting
-
-### Error: "Cannot access class... it is private in file"
-
-**Solución**: Asegúrate de que tus rutas sean `data class` o `data object` y estén marcadas con
-`@Serializable`.
-
-### Error: "No serializer found for class"
-
-**Solución**: Verifica que tienes el plugin de serialización configurado:
-
-```kotlin
-plugins {
-    alias(libs.plugins.kotlinSerialization)
-}
-
-dependencies {
-    implementation(libs.kotlinx.serialization.json)
-}
-```
-
-### Los argumentos son null
-
-**Solución**: Usa `toRoute<T>()` en lugar de acceder manualmente a `arguments`.
-
-## 📖 Referencias
+## Referencias
 
 - [Navigation Compose Multiplatform](https://kotlinlang.org/docs/multiplatform/compose-navigation.html)
 - [Type Safety in Navigation](https://developer.android.com/guide/navigation/design/type-safety)
-- [Kotlin Serialization](https://kotlinlang.org/docs/serialization.html)
+- [napoli-kmm-base](https://github.com/elNapoli/kmm-base) — define `NavigationCommand`,
+  `NavigationHandler`, `NavigationCoordinator`, `NavigableFeature`, `Destination`, `FeatureManager`
 
-## 📄 Licencia
+## Licencia
 
 MIT License

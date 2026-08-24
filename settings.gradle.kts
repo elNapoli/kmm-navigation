@@ -27,6 +27,23 @@ dependencyResolutionManagement {
         mavenCentral()
         mavenLocal()
 
+        maven {
+            name = "GitHubPackagesBase"
+            url = uri("https://maven.pkg.github.com/elNapoli/kmm-base")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("PAT_READ_PACKAGES") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+
+        maven {
+            name = "GitHubPackagesLogger"
+            url = uri("https://maven.pkg.github.com/elNapoli/kmm-logger")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("PAT_READ_PACKAGES") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 }
 

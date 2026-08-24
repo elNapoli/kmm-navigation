@@ -113,10 +113,10 @@ publishing {
 
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/tuusuario/android-navigation")
+            url = uri("https://maven.pkg.github.com/elNapoli/kmm-navigation")
             credentials {
                 username = project.findProperty("gpr.user") as String?
-                    ?: System.getenv("GITHUB_USERNAME")
+                    ?: System.getenv("GITHUB_ACTOR")
                 password = project.findProperty("gpr.token") as String?
                     ?: System.getenv("GITHUB_TOKEN")
             }
