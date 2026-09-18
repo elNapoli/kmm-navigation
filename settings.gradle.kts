@@ -47,4 +47,5 @@ dependencyResolutionManagement {
     }
 }
 
-include(":navigation-kmp")
+include(":navigation-kmp-domain")
+include(":navigation-kmp-presentation")
