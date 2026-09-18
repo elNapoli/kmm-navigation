@@ -29,29 +29,25 @@ kotlin {
         publishLibraryVariants("release")
     }
 
-
     listOf(
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "Navigation"
+            baseName = "NavigationPresentation"
             isStatic = true
         }
     }
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":navigation-kmp-domain"))
+            api(libs.napoli.base.presentation)
             implementation(libs.koin.core)
             implementation(libs.jetbrains.navigation.compose)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
-
-            // Napoli Base
-            implementation(libs.napoli.base)
             implementation(libs.napoli.logger)
-            
-
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -60,7 +56,7 @@ kotlin {
 }
 
 android {
-    namespace = "cl.baldomeronapoli.navigation"
+    namespace = "cl.baldomeronapoli.navigation.presentation"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
@@ -76,7 +72,6 @@ android {
         getByName("debug") {
             isMinifyEnabled = false
         }
-
         getByName("release") {
             isMinifyEnabled = false
         }

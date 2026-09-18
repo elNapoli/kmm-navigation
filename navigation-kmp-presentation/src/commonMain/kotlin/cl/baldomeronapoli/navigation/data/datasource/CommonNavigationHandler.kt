@@ -24,13 +24,14 @@ class CommonNavigationHandler : NavigationHandler {
             }
 
             is NavigateBackTo -> {
-                if (command.route == null) {
+                val route = command.route
+                if (route == null) {
                     navController.popBackStack(
                         navController.graph.startDestinationId,
                         inclusive = false
                     )
                 } else {
-                    navController.popBackStack(command.route, command.inclusive)
+                    navController.popBackStack(route, command.inclusive)
                 }
                 true
             }
