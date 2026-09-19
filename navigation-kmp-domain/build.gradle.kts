@@ -40,6 +40,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.serialization.json)
+            // api(): DeepLinkBus.asFlow() retorna Flow<String>, expuesto a
+            // quien consuma este modulo.
+            api(libs.kotlinx.coroutines.core)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
