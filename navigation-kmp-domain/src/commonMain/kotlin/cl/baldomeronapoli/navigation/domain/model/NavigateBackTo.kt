@@ -1,8 +1,5 @@
 package cl.baldomeronapoli.navigation.domain.model
 
-import cl.baldomeronapoli.base.domain.models.Destination
-import cl.baldomeronapoli.base.navigation.NavigationCommand
-
 /**
  * Comando para navegar hacia atrás hasta una ruta específica.
  *
@@ -11,5 +8,5 @@ import cl.baldomeronapoli.base.navigation.NavigationCommand
  */
 data class NavigateBackTo(
     val route: Destination? = null,
-    val inclusive: Boolean = false
+    val inclusive: Boolean = false,
 ) : NavigationCommand

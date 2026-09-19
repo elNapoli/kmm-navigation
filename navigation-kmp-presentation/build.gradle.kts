@@ -41,8 +41,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":navigation-kmp-domain"))
-            api(libs.napoli.base.presentation)
+            api(projects.napoliNavigationKmp.navigationKmpDomain)
             implementation(libs.koin.core)
             implementation(libs.jetbrains.navigation.compose)
             implementation(libs.kotlinx.datetime)

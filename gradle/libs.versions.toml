@@ -9,7 +9,6 @@ kotlinx-datetime = "0.6.1"
 kotlinx-serialization = "1.8.0"
 navigationCompose = "2.9.1"
 koin = "4.1.1"
-napoli-base = "2.0.0"
 napoli-logger = "1.0.0"
 
 [libraries]
@@ -18,8 +17,6 @@ koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 jetbrains-navigation-compose = { module = "org.jetbrains.androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
-napoli-base-domain = { module = "cl.baldomeronapoli:base-kmp-domain", version.ref = "napoli-base" }
-napoli-base-presentation = { module = "cl.baldomeronapoli:base-kmp-presentation", version.ref = "napoli-base" }
 napoli-logger = { module = "cl.baldomeronapoli:logger-kmp", version.ref = "napoli-logger" }
 
 [plugins]
