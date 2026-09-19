@@ -1,7 +1,5 @@
 package cl.baldomeronapoli.navigation.domain.model
 
-import cl.baldomeronapoli.base.navigation.NavigationCommand
-
 /**
  * Contrato de navegación que cada feature debe definir en el módulo base.
  *
@@ -63,4 +61,6 @@ interface NavigationContract {
  * }
  * ```
  */
-interface TypedNavigationContract<out T : NavigationCommand> : NavigationContract, NavigationCommand
+interface TypedNavigationContract<out T : NavigationCommand> :
+    NavigationContract,
+    NavigationCommand

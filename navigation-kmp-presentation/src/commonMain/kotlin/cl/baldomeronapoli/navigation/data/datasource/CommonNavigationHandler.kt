@@ -1,11 +1,10 @@
 package cl.baldomeronapoli.navigation.data.datasource
 
 import androidx.navigation.NavHostController
-import cl.baldomeronapoli.base.navigation.NavigationCommand
-import cl.baldomeronapoli.base.navigation.NavigationHandler
 import cl.baldomeronapoli.navigation.domain.model.NavigateBack
 import cl.baldomeronapoli.navigation.domain.model.NavigateBackTo
 import cl.baldomeronapoli.navigation.domain.model.NavigateToRoute
+import cl.baldomeronapoli.navigation.domain.model.NavigationCommand
 
 /**
  * Handler genérico que maneja comandos comunes de navegación.
@@ -13,11 +12,14 @@ import cl.baldomeronapoli.navigation.domain.model.NavigateToRoute
  * Este handler está incluido por defecto en la librería y maneja
  * los comandos básicos de navegación que no requieren lógica específica del feature.
  */
-class CommonNavigationHandler : NavigationHandler {
+class CommonNavigationHandler : NavigationHandler<NavHostController> {
     override val featureName: String = "common"
 
-    override fun handle(command: NavigationCommand, navController: NavHostController): Boolean {
-        return when (command) {
+    override fun handle(
+        command: NavigationCommand,
+        navController: NavHostController,
+    ): Boolean =
+        when (command) {
             is NavigateBack -> {
                 navController.navigateUp()
                 true
@@ -28,7 +30,7 @@ class CommonNavigationHandler : NavigationHandler {
                 if (route == null) {
                     navController.popBackStack(
                         navController.graph.startDestinationId,
-                        inclusive = false
+                        inclusive = false,
                     )
                 } else {
                     navController.popBackStack(route, command.inclusive)
@@ -48,7 +50,8 @@ class CommonNavigationHandler : NavigationHandler {
                 true
             }
 
-            else -> false
+            else -> {
+                false
+            }
         }
-    }
 }

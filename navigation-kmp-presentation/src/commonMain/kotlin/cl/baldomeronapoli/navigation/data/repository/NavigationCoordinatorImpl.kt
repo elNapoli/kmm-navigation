@@ -1,12 +1,11 @@
 package cl.baldomeronapoli.navigation.data.repository
 
 import androidx.navigation.NavHostController
-import cl.baldomeronapoli.base.navigation.NavigationCommand
-import cl.baldomeronapoli.base.navigation.NavigationCoordinator
-import cl.baldomeronapoli.base.navigation.NavigationHandler
-import cl.baldomeronapoli.navigation.data.datasource.CommonNavigationHandler
-import cl.baldomeronapoli.navigation.domain.model.NavigationContract
 import cl.baldomeronapoli.logger.Trace
+import cl.baldomeronapoli.navigation.data.datasource.CommonNavigationHandler
+import cl.baldomeronapoli.navigation.data.datasource.NavigationHandler
+import cl.baldomeronapoli.navigation.domain.model.NavigationCommand
+import cl.baldomeronapoli.navigation.domain.model.NavigationContract
 
 /**
  * Coordinador central de navegación.
@@ -47,11 +46,9 @@ import cl.baldomeronapoli.logger.Trace
  * navigationCoordinator.navigate(HomeNavigationContract.NavigateToHome)
  * ```
  */
-class NavigationCoordinatorImpl : NavigationCoordinator {
-
-    private val handlers = mutableMapOf<String, NavigationHandler>()
+class NavigationCoordinatorImpl : NavigationCoordinator<NavHostController> {
+    private val handlers = mutableMapOf<String, NavigationHandler<NavHostController>>()
     private var navController: NavHostController? = null
-
 
     init {
         registerHandler(CommonNavigationHandler())
@@ -62,7 +59,7 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
         Trace.d("NavigationCoordinator: NavController set")
     }
 
-    override fun registerHandler(handler: NavigationHandler) {
+    override fun registerHandler(handler: NavigationHandler<NavHostController>) {
         if (handlers.containsKey(handler.featureName)) {
             Trace.d("NavigationCoordinator: Handler for '${handler.featureName}' already registered, skipping")
             return
@@ -71,7 +68,7 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
         Trace.d("NavigationCoordinator: Registered handler for feature '${handler.featureName}'")
     }
 
-    override fun registerHandlers(vararg handlers: NavigationHandler) {
+    override fun registerHandlers(vararg handlers: NavigationHandler<NavHostController>) {
         handlers.forEach { registerHandler(it) }
     }
 
@@ -115,13 +112,9 @@ class NavigationCoordinatorImpl : NavigationCoordinator {
         return false
     }
 
-    override fun getHandler(featureName: String): NavigationHandler? {
-        return handlers[featureName]
-    }
+    override fun getHandler(featureName: String): NavigationHandler<NavHostController>? = handlers[featureName]
 
-    override fun hasHandler(featureName: String): Boolean {
-        return handlers.containsKey(featureName)
-    }
+    override fun hasHandler(featureName: String): Boolean = handlers.containsKey(featureName)
 
     override fun clear() {
         handlers.clear()

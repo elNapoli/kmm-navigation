@@ -39,7 +39,6 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(libs.napoli.base.domain)
             implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
