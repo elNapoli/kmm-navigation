@@ -7,17 +7,20 @@ plugins {
     id("maven-publish")
 }
 
-val versionProvider = providers.exec {
-    commandLine("git", "describe", "--tags", "--abbrev=0")
-    isIgnoreExitValue = true
-}.standardOutput.asText.map { output ->
-    val version = output.trim()
-    if (version.isNotEmpty() && version.startsWith("v")) {
-        version.substring(1)
-    } else version.ifEmpty {
-        "1.0.0"
-    }
-}.orElse("1.0.0")
+val versionProvider =
+    providers.exec {
+        commandLine("git", "describe", "--tags", "--abbrev=0")
+        isIgnoreExitValue = true
+    }.standardOutput.asText.map { output ->
+        val version = output.trim()
+        if (version.isNotEmpty() && version.startsWith("v")) {
+            version.substring(1)
+        } else {
+            version.ifEmpty {
+                "1.0.0"
+            }
+        }
+    }.orElse("1.0.0")
 
 kotlin {
     androidTarget {
@@ -29,7 +32,7 @@ kotlin {
 
     listOf(
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "NavigationDomain"
