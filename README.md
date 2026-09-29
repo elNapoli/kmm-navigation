@@ -9,7 +9,8 @@ construida sobre Navigation Compose Multiplatform y el sistema de features de
 - **Navegación desacoplada entre features**: un feature navega a otro sin conocer su implementación
 - **Coordinador central**: `NavigationCoordinator` enruta comandos al handler correcto
 - **Comandos tipados**: cada feature define su propio `NavigationContract` con sus comandos posibles
-- **Comandos comunes incluidos**: `NavigateBack`, `NavigateBackTo`, `NavigateToRoute` ya vienen resueltos
+- **Comandos comunes incluidos**: `NavigateBack`, `NavigateBackTo`, `NavigateToRoute` ya vienen
+  resueltos
 - **Integración con Koin**: se registra con un módulo (`NavigationModule`) listo para usar
 - **Multiplataforma**: Android e iOS (`iosArm64`, `iosSimulatorArm64`)
 
@@ -120,9 +121,11 @@ NavController ejecuta la navegación
   automáticamente un `CommonNavigationHandler` al crearse.
 - **`CommonNavigationHandler`**: handler incluido por defecto (`featureName = "common"`) que
   resuelve los comandos genéricos sin que cada feature tenga que reimplementarlos:
-  - `NavigateBack`: navega hacia atrás (`navController.navigateUp()`)
-  - `NavigateBackTo(route, inclusive)`: hace pop hasta una ruta específica (o hasta el root si `route == null`)
-  - `NavigateToRoute(route, popUpTo, inclusive, singleTop)`: navega a una `Destination` directamente
+    - `NavigateBack`: navega hacia atrás (`navController.navigateUp()`)
+    - `NavigateBackTo(route, inclusive)`: hace pop hasta una ruta específica (o hasta el root si
+      `route == null`)
+    - `NavigateToRoute(route, popUpTo, inclusive, singleTop)`: navega a una `Destination`
+      directamente
 - **`NavigationContract`** / **`TypedNavigationContract<T>`**: contratos base para que cada
   feature defina sus propios comandos tipados
 - **`NavigationModule`**: módulo de Koin que registra `NavigationCoordinator` como singleton
@@ -201,7 +204,9 @@ class HomeFeature : NavigableFeature, KoinComponent {
     }
 
     override fun onNavigationReady(navController: NavHostController) {}
-    override fun dispose() { navigationCoordinator = null }
+    override fun dispose() {
+        navigationCoordinator = null
+    }
 }
 ```
 
@@ -259,6 +264,93 @@ Si el comando implementa `NavigationContract` (tiene `featureName`), el coordina
 directo al handler de ese feature. Si no lo implementa (como `NavigateBack`/`NavigateToRoute`),
 prueba primero con el handler `"common"` y, si ninguno lo maneja, recorre el resto de handlers
 registrados como fallback.
+
+### 6. Devolver un resultado a quien abrió el flujo
+
+Cuando un módulo abre a otro y necesita saber cómo terminó (ej. Dashboard abre PIN) hay dos roles:
+
+- **Módulo que llama** (Dashboard): abre el flujo y consume el resultado.
+- **Módulo llamado** (PIN): produce el resultado. Es el dueño de su tipo.
+
+El módulo llamado declara el resultado tipado **en el módulo de contratos compartido, junto a su
+`NavigationContract`**, no dentro de su implementación. Así el módulo que llama ve el tipo sin
+depender del módulo llamado:
+
+```
+base/navigation/contracts/
+  └── PinContract.kt   // PinContract + PinResult + PinResultKey (dueño: módulo llamado)
+feature-pin/           // módulo llamado: emite NavigateBackWithResult
+feature-dashboard/     // módulo que llama: observa navigationResults(PinResultKey)
+```
+
+Solo desenlaces terminales: lo que el módulo llamado resuelve por sí mismo (ej. PIN incorrecto
+con reintento) no se reporta.
+
+```kotlin
+// base/navigation/contracts/PinContract.kt
+sealed interface PinContract : TypedNavigationContract<PinContract> {
+    override val featureName: String get() = "pin"
+
+    data class Verify(val purpose: PinPurpose) : PinContract
+}
+
+@Serializable
+sealed interface PinResult : NavigationResult {
+    @Serializable
+    data class Verified(val purpose: PinPurpose) : PinResult
+    @Serializable
+    data class Cancelled(val purpose: PinPurpose) : PinResult
+    @Serializable
+    data class Failed(val purpose: PinPurpose, val reason: PinFailure) : PinResult
+}
+
+val PinResultKey = ResultKey("pin.result", PinResult.serializer())
+```
+
+El módulo llamado termina con `NavigateBackWithResult`. `popUpTo` es su ruta raíz (hace pop
+inclusive y entrega el resultado a la entrada que queda arriba); con `popUpTo = null` entrega a la
+entrada anterior y hace un pop simple. El back del sistema también debe terminar en `Cancelled`.
+
+```kotlin
+// PinViewModel (módulo llamado)
+navigationCoordinator.navigate(
+    NavigateBackWithResult(
+        PinResultKey,
+        PinResult.Verified(purpose),
+        popUpTo = PinDestination.Graph
+    ),
+)
+```
+
+El módulo que llama lo recibe desde el `SavedStateHandle` de su ViewModel. Cada resultado se emite
+una sola
+vez y sobrevive a la muerte del proceso:
+
+```kotlin
+// DashboardViewModel (módulo que llama)
+fun onTransfer() = navigationCoordinator.navigate(PinContract.Verify(PinPurpose.Transfer))
+
+savedStateHandle.navigationResults(PinResultKey)
+    .onEach { result ->
+        when (result) {
+            is PinResult.Verified -> {
+                TODO()
+            }
+            is PinResult.Cancelled -> {
+                TODO()
+            }
+            is PinResult.Failed -> {
+                TODO()
+            }
+        }
+    }
+    .launchIn(viewModelScope)
+```
+
+> El resultado se guarda en el saved state del módulo que llama (en disco y sin cifrar tras la
+> muerte del
+> proceso): nunca incluyas el PIN, tokens ni datos personales. `Verified` es una señal de UI, no una
+> autorización; la operación sensible la valida el backend.
 
 ## Troubleshooting
 

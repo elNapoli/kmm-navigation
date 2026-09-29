@@ -39,7 +39,8 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.kotlinx.serialization.json)
+            // api(): ResultKey expone KSerializer a quien declare resultados.
+            api(libs.kotlinx.serialization.json)
             // api(): DeepLinkBus.asFlow() retorna Flow<String>, expuesto a
             // quien consuma este modulo.
             api(libs.kotlinx.coroutines.core)

@@ -3,6 +3,7 @@ package cl.baldomeronapoli.navigation.data.datasource
 import androidx.navigation.NavHostController
 import cl.baldomeronapoli.navigation.domain.model.NavigateBack
 import cl.baldomeronapoli.navigation.domain.model.NavigateBackTo
+import cl.baldomeronapoli.navigation.domain.model.NavigateBackWithResult
 import cl.baldomeronapoli.navigation.domain.model.NavigateToRoute
 import cl.baldomeronapoli.navigation.domain.model.NavigationCommand
 
@@ -50,8 +51,28 @@ class CommonNavigationHandler : NavigationHandler<NavHostController> {
                 true
             }
 
+            is NavigateBackWithResult<*> -> {
+                navigateBackWithResult(command, navController)
+            }
+
             else -> {
                 false
             }
         }
+
+    private fun navigateBackWithResult(
+        command: NavigateBackWithResult<*>,
+        navController: NavHostController,
+    ): Boolean {
+        val encoded = command.encodedResult()
+        val popUpTo = command.popUpTo
+        if (popUpTo == null) {
+            val caller = navController.previousBackStackEntry ?: return false
+            caller.savedStateHandle[command.key.name] = encoded
+            return navController.popBackStack()
+        }
+        if (!navController.popBackStack(popUpTo, inclusive = true)) return false
+        navController.currentBackStackEntry?.savedStateHandle?.set(command.key.name, encoded)
+        return true
+    }
 }
