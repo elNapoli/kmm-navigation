@@ -129,6 +129,9 @@ NavController ejecuta la navegación
 - **`NavigationContract`** / **`TypedNavigationContract<T>`**: contratos base para que cada
   feature defina sus propios comandos tipados
 - **`NavigationModule`**: módulo de Koin que registra `NavigationCoordinator` como singleton
+- **`NavGraphContributor`** + **`NavGraphBuilder.contributeAll()`**: cada feature aporta su parte
+  del grafo y el host las junta con `getAll<NavGraphContributor>()` de Koin, sin una lista manual
+  de features
 
 ### `Destination` (de `base-kmp`)
 
@@ -183,32 +186,33 @@ class HomeNavigationHandler : NavigationHandler {
 }
 ```
 
-### 3. Implementar `NavigableFeature` (de `base-kmp`)
+### 3. Aportar el grafo del feature con `NavGraphContributor`
 
 ```kotlin
-class HomeFeature : NavigableFeature, KoinComponent {
-    override val featureName = "home"
-    override val priority = 100
-
-    override var navigationCoordinator: NavigationCoordinator? = null
-        get() = field ?: inject<NavigationCoordinator>().value.also { field = it }
-
-    override fun provideDependencies(): List<Module> = HomeModule.getModules()
-
-    override fun NavGraphBuilder.registerNavigation() {
+class HomeNavGraph : NavGraphContributor {
+    override fun NavGraphBuilder.contribute() {
         navigation<HomeDestination.Graph>(startDestination = HomeDestination.Main::class) {
-            composable<HomeDestination.Main> {
-                LazyFeatureLoader(featureName = featureName) { MainRoute() }
-            }
+            composable<HomeDestination.Main> { MainRoute() }
         }
-    }
-
-    override fun onNavigationReady(navController: NavHostController) {}
-    override fun dispose() {
-        navigationCoordinator = null
     }
 }
 ```
+
+Se registra en el módulo de Koin del feature como binding **secundario**: varios
+`single<NavGraphContributor>` sin qualifier se pisarían entre sí, con `bind` cada uno conserva
+su propia clave y `getAll` los devuelve todos.
+
+```kotlin
+val homeModule = module {
+    singleOf(::HomeNavGraph) bind NavGraphContributor::class
+}
+```
+
+`getAll` no garantiza orden. A Navigation Compose no le importa el orden de los destinos, pero
+dos features no pueden registrar la misma ruta.
+
+> `NavigableFeature` + `FeatureManager.registerAllNavigationRoutes()` (de `base-kmp`) siguen
+> funcionando, pero exigen instanciar cada feature a mano en la app.
 
 ### 4. Registrar Koin y los handlers en el punto de entrada de la app
 
@@ -216,7 +220,7 @@ class HomeFeature : NavigableFeature, KoinComponent {
 startKoin {
     modules(AppModule.getModules())
     modules(NavigationModule.getModules())       // registra NavigationCoordinator
-    modules(featureManager.getCriticalDependencyModules(maxPriority = 50))
+    modules(HomeModule.getModules() + SettingsModule.getModules())
 }
 ```
 
@@ -225,7 +229,7 @@ startKoin {
 fun AppRoute() {
     val navController = rememberNavController()
     val navigationCoordinator: NavigationCoordinator = koinInject()
-    val featureManager: FeatureManager = koinInject()
+    val contributors = remember { getKoin().getAll<NavGraphContributor>() }
 
     LaunchedEffect(navController) {
         navigationCoordinator.setNavController(navController)
@@ -236,11 +240,9 @@ fun AppRoute() {
         )
     }
 
-    LaunchedEffect(navController) {
-        featureManager.notifyNavigationReady(navController)
+    NavHost(navController = navController, startDestination = HomeDestination.Graph) {
+        contributeAll(contributors)
     }
-
-    MainRoute(navController = navController)
 }
 ```
 

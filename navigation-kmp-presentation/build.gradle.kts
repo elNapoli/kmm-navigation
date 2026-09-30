@@ -46,7 +46,8 @@ kotlin {
         commonMain.dependencies {
             api(projects.napoliNavigationKmp.navigationKmpDomain)
             implementation(libs.koin.core)
-            implementation(libs.jetbrains.navigation.compose)
+            // api: NavGraphContributor expone NavGraphBuilder en su firma publica.
+            api(libs.jetbrains.navigation.compose)
             implementation(libs.kotlinx.datetime)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.napoli.logger)
